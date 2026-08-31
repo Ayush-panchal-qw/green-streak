@@ -1,11 +1,9 @@
-name: 🌿 Daily Commit
+name: Daily Commit
 
 on:
   schedule:
-    # Runs at 18:30 UTC = 00:00 IST (midnight India time)
     - cron: '30 18 * * *'
   workflow_dispatch:
-    # Also allows manual trigger from GitHub UI anytime
 
 jobs:
   daily-commit:
@@ -29,20 +27,22 @@ jobs:
           TIME=$(date '+%H:%M:%S')
           DAY=$(date '+%j' | sed 's/^0*//')
 
-          # Append to commit log
-          echo "[${DATE} ${TIME}]  Day ${DAY}/365 — Staying consistent. 🌿" >> commit_log.txt
-
-          # Update last-commit line in README
+          echo "[${DATE} ${TIME}]  Day ${DAY}/365 - Staying consistent." >> commit_log.txt
           sed -i "s/\*\*Last commit:\*\*.*/\*\*Last commit:\*\* ${DATE} ${TIME}/" README.md
 
           git add -A
-          git commit -m "🌿 Daily commit — ${DATE} (day ${DAY}/365)"
-          git push
 
-      - name: Commit success summary
+          # Skip if nothing changed
+          git diff --cached --quiet && echo "Nothing to commit today" && exit 0
+
+          git commit -m "Daily commit - ${DATE} (day ${DAY}/365)"
+
+          # Rebase against remote before pushing to avoid non-fast-forward errors
+          git pull --rebase origin main
+          git push origin main
+
+      - name: Summary
         run: |
-          echo "### ✅ Daily commit pushed!" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Daily commit pushed!" >> $GITHUB_STEP_SUMMARY
           echo "- **Date:** $(date '+%Y-%m-%d')" >> $GITHUB_STEP_SUMMARY
           echo "- **Day of year:** $(date '+%j' | sed 's/^0*//')/365" >> $GITHUB_STEP_SUMMARY
-          echo "- **Repo:** [green-streak](https://github.com/Ayush-Panchal-qw/green-streak)" >> $GITHUB_STEP_SUMMARY
